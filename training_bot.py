@@ -13,16 +13,16 @@ bot = Bot(token="7068234959:AAHvJKfcrpZkfnLmsT2d-BXgwriNuLdyiSo")
 dp = Dispatcher()
 
 
-@dp.message(F.text == 'Грудь и бицепс')
-async def func1(message: types.Message):
+@dp.message(F.text == 'Грудь и трицепс')
+async def сhest_and_triceps(message: types.Message):
     await message.answer("контент")
 
-@dp.message(F.text == 'Спина и трицепс')
-async def func2(message: types.Message):
+@dp.message(F.text == 'Спина и бицепс')
+async def back_and_biceps(message: types.Message):
     await message.answer("контент")
 
 @dp.message(F.text == 'Ноги и плечи')
-async def func3(message: types.Message):
+async def legs_and_shoulders(message: types.Message):
     await message.answer("контент")
 
 
