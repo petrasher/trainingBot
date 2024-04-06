@@ -47,7 +47,7 @@ async def send_timer_messages(chat_id, seconds):
 
 @dp.message(F.text == "Грудь и трицепс")
 async def chest_and_triceps(message: types.Message):
-    await message.answer('Отдых между подходами 2-3 минуты')
+    await message.answer('Отдых между подходами 120-180 секунд, отдых между упражнениями 300 секунд')
     global current_exercise_ct_index
     photo_paths = exercise_ct_images.get("Грудь и трицепс", [])
     if current_exercise_ct_index < len(photo_paths):
@@ -71,7 +71,7 @@ async def chest_and_triceps(message: types.Message):
 
 @dp.message(F.text == "Спина и бицепс")
 async def back_and_biceps(message: types.Message):
-    await message.answer('Отдых между подходами 2-3 минуты')
+    await message.answer('Отдых между подходами 120-180 секунд, отдых между упражнениями 300 секунд')
     global current_exercise_bb_index
     photo_paths = exercise_bb_images.get("Спина и бицепс", [])
     if current_exercise_bb_index < len(photo_paths):
