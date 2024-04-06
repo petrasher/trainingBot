@@ -20,8 +20,8 @@ timer_messages = []
 
 # Словарь для связи названий упражнений с путями к изображениям
 exercise_ct_images = {
-    "Грудь и трицепс": ["pictures/chest_triceps/1.jpg", "pictures/chest_triceps/2.jpg", "pictures/chest_triceps/3.jpg",
-                        "pictures/chest_triceps/4.jpg", "pictures/chest_triceps/5.jpg", "pictures/chest_triceps/6.jpg"],
+    "Грудь и трицепс": ["pictures/chest_triceps/1.gif", "pictures/chest_triceps/2.gif", "pictures/chest_triceps/3.gif",
+                        "pictures/chest_triceps/4.gif", "pictures/chest_triceps/5.gif", "pictures/chest_triceps/6.gif"],
     # Добавьте здесь остальные упражнения
 }
 exercise_bb_images = {
@@ -47,13 +47,12 @@ async def send_timer_messages(chat_id, seconds):
 
 @dp.message(F.text == "Грудь и трицепс")
 async def chest_and_triceps(message: types.Message):
-    await message.answer(
-        'Отдых между подходами 2-3 минуты(для подсчета времени вы можете использовать кнопку "секундомер" расположенную ниже), отдых между упражнениями 5 минут. Количество раз и количество подходов выполнений упражнения указано на изображениях')
+    await message.answer('Отдых между подходами 2-3 минуты')
     global current_exercise_ct_index
     photo_paths = exercise_ct_images.get("Грудь и трицепс", [])
     if current_exercise_ct_index < len(photo_paths):
         photo_path = photo_paths[current_exercise_ct_index]
-        await bot.send_photo(message.chat.id, photo=types.FSInputFile(photo_path))
+        await bot.send_animation(message.chat.id, animation=types.FSInputFile(photo_path))
 
         # Отправляем кнопки управления секундомером
         kb = [
@@ -72,8 +71,7 @@ async def chest_and_triceps(message: types.Message):
 
 @dp.message(F.text == "Спина и бицепс")
 async def back_and_biceps(message: types.Message):
-    await message.answer(
-        'Отдых между подходами 2-3 минуты(для подсчета времени вы можете использовать кнопку "секундомер" расположенную ниже), отдых между упражнениями 5 минут. Количество раз и количество подходов выполнений упражнения указано на изображениях')
+    await message.answer('Отдых между подходами 2-3 минуты')
     global current_exercise_bb_index
     photo_paths = exercise_bb_images.get("Спина и бицепс", [])
     if current_exercise_bb_index < len(photo_paths):
