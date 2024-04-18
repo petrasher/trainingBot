@@ -3,58 +3,70 @@ import logging
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters.command import Command
 
-# Включаем логирование, чтобы не пропустить важные сообщения
 logging.basicConfig(level=logging.INFO)
 
-# Объект бота
-bot = Bot(token="7068234959:AAHvJKfcrpZkfnLmsT2d-BXgwriNuLdyiSo")
+bot = Bot(token="")
 
-# Диспетчер
 dp = Dispatcher()
 
-# Переменная для отслеживания состояния секундомера
 is_timer_running = False
 
-# Список для хранения идентификаторов сообщений секундомера
+stop_event = asyncio.Event()
+
 timer_messages = []
 
-# Словарь для связи названий упражнений с путями к изображениям
+seconds = 0
+
 exercise_ct_images = {
     "Грудь и трицепс": ["pictures/chest_triceps/1.gif", "pictures/chest_triceps/2.gif", "pictures/chest_triceps/3.gif",
-                        "pictures/chest_triceps/4.gif", "pictures/chest_triceps/5.gif", "pictures/chest_triceps/6.gif"],
-    # Добавьте здесь остальные упражнения
+                        "pictures/chest_triceps/4.gif", "pictures/chest_triceps/5.gif", "pictures/chest_triceps/6.gif"]
 }
 exercise_bb_images = {
     "Спина и бицепс": ["pictures/back_biceps/1.jpg", "pictures/back_biceps/2.jpg", "pictures/back_biceps/3.jpg",
-                       "pictures/back_biceps/4.jpg", "pictures/back_biceps/5.jpg"],
+                       "pictures/back_biceps/4.jpg", "pictures/back_biceps/5.jpg"]
+}
+exercise_ls_images = {
+    "Ноги и плечи": ["pictures/legs_shoulders/1.jpg", "pictures/legs_shoulders/2.jpg", "pictures/legs_shoulders/3.jpg",
+                     "pictures/legs_shoulders/4.jpg", "pictures/legs_shoulders/5.jpg",
+                     "pictures/legs_shoulders/6.jpg", "pictures/legs_shoulders/7.jpg",
+                     "pictures/legs_shoulders/8.jpg", "pictures/legs_shoulders/9.jpg",
+                     "pictures/legs_shoulders/10.jpg"]
 }
 
-# Счетчик для отслеживания текущего индекса упражнения
 current_exercise_ct_index = 0
 current_exercise_bb_index = 0
+current_exercise_ls_index = 0
+
+async def send_timer_messages(chat_id, stop_event):
+    global timer_messages, seconds
+    try:
+        while True:
+            await asyncio.wait([asyncio.create_task(stop_event.wait())], timeout=20)
+            if stop_event.is_set():
+                break
+            seconds += 20
+            message = await bot.send_message(chat_id, f"Прошло {seconds} секунд")
+            timer_messages.append(message.message_id)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    print("stopped")
+    return
 
 
-async def send_timer_messages(chat_id, seconds):
-    global timer_messages
-    while True:
-        await asyncio.sleep(20)
-        if not is_timer_running:  # Проверяем, нужно ли продолжать отправлять сообщения
-            return
-        message = await bot.send_message(chat_id, f"Прошло {seconds} секунд")
-        timer_messages.append(message.message_id)  # Сохраняем идентификатор сообщения
-        seconds += 20
+
+
 
 
 @dp.message(F.text == "Грудь и трицепс")
 async def chest_and_triceps(message: types.Message):
     await message.answer('Отдых между подходами 120-180 секунд, отдых между упражнениями 300 секунд')
-    global current_exercise_ct_index
+    global current_exercise_ct_index, seconds
+    seconds = 0
     photo_paths = exercise_ct_images.get("Грудь и трицепс", [])
     if current_exercise_ct_index < len(photo_paths):
         photo_path = photo_paths[current_exercise_ct_index]
         await bot.send_animation(message.chat.id, animation=types.FSInputFile(photo_path))
 
-        # Отправляем кнопки управления секундомером
         kb = [
             [types.KeyboardButton(text="Запустить секундомер")],
             [types.KeyboardButton(text="Остановить секундомер")],
@@ -72,13 +84,13 @@ async def chest_and_triceps(message: types.Message):
 @dp.message(F.text == "Спина и бицепс")
 async def back_and_biceps(message: types.Message):
     await message.answer('Отдых между подходами 120-180 секунд, отдых между упражнениями 300 секунд')
-    global current_exercise_bb_index
+    global current_exercise_bb_index, seconds
+    seconds = 0
     photo_paths = exercise_bb_images.get("Спина и бицепс", [])
     if current_exercise_bb_index < len(photo_paths):
         photo_path = photo_paths[current_exercise_bb_index]
         await bot.send_photo(message.chat.id, photo=types.FSInputFile(photo_path))
 
-        # Отправляем кнопки управления секундомером
         kb = [
             [types.KeyboardButton(text="Запустить секундомер")],
             [types.KeyboardButton(text="Остановить секундомер")],
@@ -92,58 +104,113 @@ async def back_and_biceps(message: types.Message):
         current_exercise_bb_index = 0
         await cmd_start(message)
 
+@dp.message(F.text == "Ноги и плечи")
+async def legs_and_shoulders(message: types.Message):
+    await message.answer('Отдых между подходами 120-180 секунд, отдых между упражнениями 300 секунд.'' '
+                         'Упражнения на ноги выполняются по одному подходу с перерывом в 20 секунд.')
+    global current_exercise_ls_index, seconds
+    seconds = 0
+    photo_paths = exercise_ls_images.get("Ноги и плечи", [])
+    if current_exercise_ls_index < len(photo_paths):
+        photo_path = photo_paths[current_exercise_ls_index]
+        await bot.send_photo(message.chat.id, photo=types.FSInputFile(photo_path))
+
+        kb = [
+            [types.KeyboardButton(text="Запустить секундомер")],
+            [types.KeyboardButton(text="Остановить секундомер")],
+            [types.KeyboardButton(text="Следующее упражнение**")],
+            [types.KeyboardButton(text="Закончить тренировку")]
+        ]
+        keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
+        await message.answer("Выберите действие:", reply_markup=keyboard)
+    else:
+        await message.answer("Упражнения закончились")
+        current_exercise_ls_index = 0
+        await cmd_start(message)
+
+
 
 @dp.message(F.text == "Следующее упражнение")
 async def next_ct_exercise(message: types.Message):
-    global current_exercise_ct_index
+    global current_exercise_ct_index, seconds, stop_event
     current_exercise_ct_index += 1
-    await chest_and_triceps(message)  # Вызываем ту же функцию, чтобы показать следующее изображение упражнения
+    await chest_and_triceps(message)
 
     global is_timer_running, timer_messages
-    is_timer_running = False  # Останавливаем секундомер
-    timer_messages = []
+    if is_timer_running:
+        is_timer_running = False
+        stop_event.set()
+        timer_messages = []
+        seconds = 0
 
 
 @dp.message(F.text == "Следующее упражнение*")
 async def next_bb_exercise(message: types.Message):
-    global current_exercise_bb_index
+    global current_exercise_bb_index, seconds, stop_event
     current_exercise_bb_index += 1
-    await back_and_biceps(message)  # Вызываем ту же функцию, чтобы показать следующее изображение упражнения
+    await back_and_biceps(message)
 
     global is_timer_running, timer_messages
-    is_timer_running = False  # Останавливаем секундомер
-    timer_messages = []
+    if is_timer_running:
+        is_timer_running = False
+        stop_event.set()
+        timer_messages = []
+        seconds = 0
+
+
+@dp.message(F.text == "Следующее упражнение**")
+async def next_ls_exercise(message: types.Message):
+    global current_exercise_ls_index, seconds, stop_event
+    current_exercise_ls_index += 1
+    await legs_and_shoulders(message)
+
+    global is_timer_running, timer_messages
+    if is_timer_running:
+        is_timer_running = False
+        stop_event.set()
+        timer_messages = []
+        seconds = 0
 
 
 @dp.message(F.text == "Запустить секундомер")
 async def start_timer(message: types.Message):
-    global is_timer_running, timer_messages
-    is_timer_running = True
-    response_message = await message.answer("Секундомер запущен. Каждые 20 секунд вы будете получать сообщения.")
-    timer_messages.append(response_message.message_id)
+    global is_timer_running, timer_messages, stop_event
+    if not is_timer_running:
+        is_timer_running = True
+        response_message = await message.answer("Секундомер запущен. Каждые 20 секунд вы будете получать сообщения.")
+        timer_messages.append(response_message.message_id)
 
-    # Удаляем сообщение "Секундомер"
-    await bot.delete_message(message.chat.id, message.message_id)
-    await send_timer_messages(message.chat.id, 20)
+        await bot.delete_message(message.chat.id, message.message_id)
+        stop_event.clear()  # Сбрасываем событие перед запуском
+        await send_timer_messages(message.chat.id, stop_event)
+    else:
+        await message.answer("Секундомер уже запущен.")
+
 
 
 @dp.message(F.text == "Остановить секундомер")
 async def stop_timer(message: types.Message):
-    global is_timer_running, timer_messages
-    is_timer_running = False  # Останавливаем секундомер
+    global is_timer_running, timer_messages, seconds, stop_event
+    if is_timer_running:
+        is_timer_running = False
+        stop_event.set()  # Устанавливаем событие, чтобы остановить send_timer_messages
 
-    # Удаляем все сообщения секундомера
-    for msg_id in timer_messages:
-        await bot.delete_message(message.chat.id, msg_id, message.message_id)
-    await bot.delete_message(message.chat.id, message.message_id)
-    timer_messages = []
+        for msg_id in timer_messages:
+            await bot.delete_message(message.chat.id, msg_id, message.message_id)
+        await bot.delete_message(message.chat.id, message.message_id)
+        timer_messages = []
+        seconds = 0
+    else:
+        await message.answer("Секундомер уже остановлен.")
+
 
 
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     kb = [
         [types.KeyboardButton(text="Грудь и трицепс")],
-        [types.KeyboardButton(text="Спина и бицепс")]
+        [types.KeyboardButton(text="Спина и бицепс")],
+        [types.KeyboardButton(text="Ноги и плечи")]
     ]
     keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
     await message.answer("Выберите группу мышц:", reply_markup=keyboard)
