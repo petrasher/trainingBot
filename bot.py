@@ -220,6 +220,13 @@ async def cmd_start(message: types.Message):
 async def workout_end(message: types.Message):
     await cmd_start(message)
 
+    global is_timer_running, timer_messages, seconds, stop_event
+    if is_timer_running:
+        is_timer_running = False
+        stop_event.set()
+        timer_messages = []
+        seconds = 0
+
 
 async def main():
     await dp.start_polling(bot)
