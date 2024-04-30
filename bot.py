@@ -39,6 +39,7 @@ current_exercise_ct_index = 0
 current_exercise_bb_index = 0
 current_exercise_ls_index = 0
 
+
 async def send_timer_messages(chat_id, stop_event):
     global timer_messages, seconds
     try:
@@ -53,7 +54,6 @@ async def send_timer_messages(chat_id, stop_event):
         print(f"An error occurred: {e}")
     print("stopped")
     return
-
 
 
 @dp.message(F.text == "Грудь и трицепс")
@@ -103,11 +103,15 @@ async def back_and_biceps(message: types.Message):
         current_exercise_bb_index = 0
         await cmd_start(message)
 
+
 @dp.message(F.text == "Ноги и плечи")
 async def legs_and_shoulders(message: types.Message):
-    await message.answer('Отдых между подходами 120-180 секунд, отдых между упражнениями 300 секунд.'' '
+    global current_exercise_ls_index, seconds, number_of_approaches, start_message, choice_action_message
+    start_message = await message.answer('Отдых между подходами 120-180 секунд, отдых между упражнениями 300 секунд.'' '
                          'Упражнения на ноги выполняются по одному подходу с перерывом в 20 секунд.')
-    global current_exercise_ls_index, seconds, number_of_approaches
+    start_message = start_message.message_id
+
+
     seconds = 0
     photo_paths = exercise_ls_images.get("Ноги и плечи", [])
     if current_exercise_ls_index < len(photo_paths):
@@ -120,13 +124,15 @@ async def legs_and_shoulders(message: types.Message):
             [types.KeyboardButton(text="Закончить тренировку")]
         ]
         keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
-        await message.answer("ВЫБЕРИТЕ ДЕЙСТВИЕ: \n-----------------------------------------------------------------",
+        choice_action_message = await message.answer("ВЫБЕРИТЕ ДЕЙСТВИЕ: \n-----------------------------------------------------------------",
                              reply_markup=keyboard)
+        choice_action_message = choice_action_message.message_id
     else:
         await message.answer("Упражнения закончились")
         current_exercise_ls_index = 0
         await cmd_start(message)
-
+        await bot.delete_message(message.chat.id, start_message)
+        await bot.delete_message(message.chat.id, choice_action_message)
 
 
 @dp.message(F.text == "Следующее упражнение")
@@ -166,6 +172,7 @@ async def next_ls_exercise(message: types.Message):
     current_exercise_ls_index += 1
     await legs_and_shoulders(message)
     number_of_approaches = 1
+    await bot.delete_message(message.chat.id, message.message_id)
 
     global is_timer_running, timer_messages
     if is_timer_running:
@@ -173,7 +180,6 @@ async def next_ls_exercise(message: types.Message):
         stop_event.set()
         timer_messages = []
         seconds = 0
-
 
 
 @dp.message(F.text == "Начать/Завершить подход")
@@ -203,8 +209,6 @@ async def toggle_timer(message: types.Message):
         await bot.delete_message(message.chat.id, start_message)
 
 
-
-
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     kb = [
@@ -227,6 +231,7 @@ async def workout_end(message: types.Message):
         stop_event.set()
         timer_messages = []
         seconds = 0
+
 
 async def main():
     await dp.start_polling(bot)
