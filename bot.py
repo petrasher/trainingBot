@@ -58,8 +58,9 @@ async def send_timer_messages(chat_id, stop_event):
 
 @dp.message(F.text == "Грудь и трицепс")
 async def chest_and_triceps(message: types.Message):
-    await message.answer('Отдых между подходами 120-180 секунд, отдых между упражнениями 300 секунд')
-    global current_exercise_ct_index, seconds
+    global current_exercise_ct_index, seconds, start_message, choice_action_message
+    start_message = await message.answer('Отдых между подходами 120-180 секунд, отдых между упражнениями 300 секунд')
+    start_message = start_message.message_id
     seconds = 0
     photo_paths = exercise_ct_images.get("Грудь и трицепс", [])
     if current_exercise_ct_index < len(photo_paths):
@@ -67,60 +68,8 @@ async def chest_and_triceps(message: types.Message):
         await bot.send_animation(message.chat.id, animation=types.FSInputFile(photo_path))
 
         kb = [
-            [types.KeyboardButton(text="Начать/Завершить подход")],
+            [types.KeyboardButton(text="Завершить подход/Начать подход")],
             [types.KeyboardButton(text="Следующее упражнение")],
-            [types.KeyboardButton(text="Закончить тренировку")]
-        ]
-        keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
-        await message.answer("ВЫБЕРИТЕ ДЕЙСТВИЕ: \n-----------------------------------------------------------------",
-                             reply_markup=keyboard)
-    else:
-        await message.answer("Упражнения закончились")
-        current_exercise_ct_index = 0
-        await cmd_start(message)
-
-
-@dp.message(F.text == "Спина и бицепс")
-async def back_and_biceps(message: types.Message):
-    await message.answer('Отдых между подходами 120-180 секунд, отдых между упражнениями 300 секунд')
-    global current_exercise_bb_index, seconds
-    seconds = 0
-    photo_paths = exercise_bb_images.get("Спина и бицепс", [])
-    if current_exercise_bb_index < len(photo_paths):
-        photo_path = photo_paths[current_exercise_bb_index]
-        await bot.send_photo(message.chat.id, photo=types.FSInputFile(photo_path))
-
-        kb = [
-            [types.KeyboardButton(text="Начать/Завершить подход")],
-            [types.KeyboardButton(text="Следующее упражнение*")],
-            [types.KeyboardButton(text="Закончить тренировку")]
-        ]
-        keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
-        await message.answer("ВЫБЕРИТЕ ДЕЙСТВИЕ: \n-----------------------------------------------------------------",
-                             reply_markup=keyboard)
-    else:
-        await message.answer("Упражнения закончились")
-        current_exercise_bb_index = 0
-        await cmd_start(message)
-
-
-@dp.message(F.text == "Ноги и плечи")
-async def legs_and_shoulders(message: types.Message):
-    global current_exercise_ls_index, seconds, number_of_approaches, start_message, choice_action_message
-    start_message = await message.answer('Отдых между подходами 120-180 секунд, отдых между упражнениями 300 секунд.'' '
-                         'Упражнения на ноги выполняются по одному подходу с перерывом в 20 секунд.')
-    start_message = start_message.message_id
-
-
-    seconds = 0
-    photo_paths = exercise_ls_images.get("Ноги и плечи", [])
-    if current_exercise_ls_index < len(photo_paths):
-        photo_path = photo_paths[current_exercise_ls_index]
-        await bot.send_photo(message.chat.id, photo=types.FSInputFile(photo_path))
-
-        kb = [
-            [types.KeyboardButton(text="Начать/Завершить подход")],
-            [types.KeyboardButton(text="Следующее упражнение**")],
             [types.KeyboardButton(text="Закончить тренировку")]
         ]
         keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
@@ -128,7 +77,65 @@ async def legs_and_shoulders(message: types.Message):
                              reply_markup=keyboard)
         choice_action_message = choice_action_message.message_id
     else:
-        await message.answer("Упражнения закончились")
+        await message.answer("УПРАЖНЕНИЯ ЗАКОНЧИЛИСЬ!")
+        current_exercise_ct_index = 0
+        await cmd_start(message)
+        await bot.delete_message(message.chat.id, start_message)
+        await bot.delete_message(message.chat.id, choice_action_message)
+
+
+@dp.message(F.text == "Спина и бицепс")
+async def back_and_biceps(message: types.Message):
+    global current_exercise_bb_index, seconds, start_message, choice_action_message
+    start_message = await message.answer('Отдых между подходами 120-180 секунд, отдых между упражнениями 300 секунд')
+    start_message = start_message.message_id
+    seconds = 0
+    photo_paths = exercise_bb_images.get("Спина и бицепс", [])
+    if current_exercise_bb_index < len(photo_paths):
+        photo_path = photo_paths[current_exercise_bb_index]
+        await bot.send_photo(message.chat.id, photo=types.FSInputFile(photo_path))
+
+        kb = [
+            [types.KeyboardButton(text="Завершить подход/Начать подход")],
+            [types.KeyboardButton(text="Следующее упражнение*")],
+            [types.KeyboardButton(text="Закончить тренировку")]
+        ]
+        keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
+        choice_action_message = await message.answer("ВЫБЕРИТЕ ДЕЙСТВИЕ: \n-----------------------------------------------------------------",
+                             reply_markup=keyboard)
+        choice_action_message = choice_action_message.message_id
+    else:
+        await message.answer("УПРАЖНЕНИЯ ЗАКОНЧИЛИСЬ!")
+        current_exercise_bb_index = 0
+        await cmd_start(message)
+        await bot.delete_message(message.chat.id, start_message)
+        await bot.delete_message(message.chat.id, choice_action_message)
+
+
+@dp.message(F.text == "Ноги и плечи")
+async def legs_and_shoulders(message: types.Message):
+    global current_exercise_ls_index, seconds, number_of_approaches, start_message, choice_action_message
+    start_message = await message.answer('Отдых между подходами 120-180 секунд, отдых между упражнениями 300 секунд.'' '
+                                         'Упражнения на ноги выполняются по одному подходу с перерывом в 20 секунд.')
+    start_message = start_message.message_id
+    seconds = 0
+    photo_paths = exercise_ls_images.get("Ноги и плечи", [])
+    if current_exercise_ls_index < len(photo_paths):
+        photo_path = photo_paths[current_exercise_ls_index]
+        await bot.send_photo(message.chat.id, photo=types.FSInputFile(photo_path))
+
+        kb = [
+            [types.KeyboardButton(text="Завершить подход/Начать подход")],
+            [types.KeyboardButton(text="Следующее упражнение**")],
+            [types.KeyboardButton(text="Закончить тренировку")]
+        ]
+        keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
+        choice_action_message = await message.answer(
+            "ВЫБЕРИТЕ ДЕЙСТВИЕ: \n-----------------------------------------------------------------",
+            reply_markup=keyboard)
+        choice_action_message = choice_action_message.message_id
+    else:
+        await message.answer("УПРАЖНЕНИЯ ЗАКОНЧИЛИСЬ!")
         current_exercise_ls_index = 0
         await cmd_start(message)
         await bot.delete_message(message.chat.id, start_message)
@@ -141,6 +148,7 @@ async def next_ct_exercise(message: types.Message):
     current_exercise_ct_index += 1
     await chest_and_triceps(message)
     number_of_approaches = 1
+    await bot.delete_message(message.chat.id, message.message_id)
 
     global is_timer_running, timer_messages
     if is_timer_running:
@@ -156,6 +164,7 @@ async def next_bb_exercise(message: types.Message):
     current_exercise_bb_index += 1
     await back_and_biceps(message)
     number_of_approaches = 1
+    await bot.delete_message(message.chat.id, message.message_id)
 
     global is_timer_running, timer_messages
     if is_timer_running:
@@ -163,7 +172,6 @@ async def next_bb_exercise(message: types.Message):
         stop_event.set()
         timer_messages = []
         seconds = 0
-        number_of_approaches = 1
 
 
 @dp.message(F.text == "Следующее упражнение**")
@@ -182,7 +190,7 @@ async def next_ls_exercise(message: types.Message):
         seconds = 0
 
 
-@dp.message(F.text == "Начать/Завершить подход")
+@dp.message(F.text == "Завершить подход/Начать подход")
 async def toggle_timer(message: types.Message):
     global is_timer_running, number_of_approaches, start_message
     if not is_timer_running:
@@ -195,7 +203,7 @@ async def toggle_timer(message: types.Message):
     else:
         is_timer_running = False
         stop_event.set()  # Устанавливаем событие, чтобы остановить send_timer_messages
-        await message.answer(f"Количество выполненных подходов: {number_of_approaches}")
+        await message.answer(f"Количество выполненных подходов - {number_of_approaches}")
         number_of_approaches += 1
 
         # Удаляем все сообщения о таймере и о начале подхода
